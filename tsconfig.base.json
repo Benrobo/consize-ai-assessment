@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ES6",
+    "module": "commonjs",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "@consizeai/shared": ["packages/shared/src/index.ts"],
+      "@consizeai/shared/*": ["packages/shared/src/*"]
+    }
+  }
+}

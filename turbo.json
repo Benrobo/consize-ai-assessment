@@ -1,0 +1,14 @@
+{
+  "pipeline": {
+    "prisma:generate": {
+      "outputs": ["node_modules/.prisma/**", "node_modules/@prisma/client"]
+    },
+    "build": {
+      "dependsOn": ["^prisma:generate"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    }
+  }
+}
