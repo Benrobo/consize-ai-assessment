@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "exports": {
+    "./prisma": "./shared/prisma"
+  },
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts --out-dir dist",
     "dev": "tsup src/index.ts --format esm,cjs --dts --out-dir dist --watch",
