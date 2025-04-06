@@ -1,59 +1,115 @@
 import { Request, Response } from "express";
 import puppeteer from "puppeteer";
-import env from "./env.js";
+import env, { rotateProxyCredentials } from "./env.js";
+import UserAgents from "user-agents";
+import capSolver from "./helpers/capsolver.js";
+import retry from "async-retry";
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export class CFTurnstileSolver {
   async solve(url: string) {
+    const credentials = rotateProxyCredentials();
+    const randAgent = new UserAgents().random().toString();
     const browser = await puppeteer.launch({
-      headless: false,
+      headless: true,
       args: [
         "--no-sandbox",
         "--disable-setuid-sandbox",
-        `--proxy-server=${env.SMART_PROXY.URL}`,
+        `--proxy-server=${credentials.url}`,
       ],
-
-      slowMo: 10000,
     });
-
     const page = await browser.newPage();
     await page.authenticate({
-      username: env.SMART_PROXY.USERNAME,
-      password: env.SMART_PROXY.PASSWORD,
+      username: credentials?.username,
+      password: credentials?.password,
     });
+    await page.setUserAgent(randAgent);
+    await page.goto(url);
 
     try {
-      await page.goto(url);
-      await page.waitForSelector("#challenge-stage");
+      return await retry(
+        async () => {
+          console.log("waiting 10sec");
+          await sleep(10000);
+          console.log("finised waiting");
 
-      // Wait for the turnstile iframe to load
-      const turnstileFrame = await page.waitForFrame((frame) =>
-        frame.url().includes("challenges.cloudflare.com")
-      );
+          const frames = page.frames();
 
-      // Wait for the widget to be ready
-      await turnstileFrame.waitForSelector("#turnstile-widget");
+          const turnstileFrame = frames.find((frame) =>
+            frame.url().includes("challenges.cloudflare.com")
+          );
 
-      // Click the checkbox
-      const checkbox = await turnstileFrame.waitForSelector(
-        'input[type="checkbox"]'
-      );
-      await checkbox?.click();
+          if (turnstileFrame) {
+            const frameUrl = turnstileFrame.url();
+            const websiteKey = frameUrl
+              .split("/")
+              .find((s) => s.startsWith("0x"));
 
-      // Wait for challenge completion
-      await page.waitForFunction(
-        () => {
-          return !document.querySelector("#challenge-stage");
+            if (!websiteKey) {
+              throw new Error("No website key found: " + frameUrl);
+            }
+
+            // solve captcha
+            const task = await capSolver.createTask(url, websiteKey);
+            if (task?.data) {
+              const solvedTask = await retry(
+                async () => {
+                  const result = await capSolver.getTask(task?.data?.taskId!);
+
+                  if (result?.data?.status === "idle") {
+                    throw new Error("Task still processing");
+                  }
+
+                  if (result?.data?.status === "failed") {
+                    throw new Error(result?.data?.errorCode);
+                  }
+
+                  return result;
+                },
+                {
+                  retries: 5,
+                  factor: 1,
+                  minTimeout: 2000,
+                  maxTimeout: 5000,
+                  onRetry: (error, attempt) => {
+                    console.log(error);
+                    console.log(
+                      `Waiting for task completion... Attempt ${attempt}`
+                    );
+                  },
+                }
+              );
+
+              console.log({ solvedTask });
+            } else {
+              console.log("Error solving task...");
+              console.log(task);
+            }
+          } else {
+            throw new Error("No turnstile frame found.");
+          }
+
+          return;
+          const cookies = await page.cookies();
+          return cookies;
         },
-        { timeout: 30000 }
+        {
+          retries: 3,
+          minTimeout: 10000,
+          onRetry: async (e, attempt) => {
+            // await browser.close();
+            console.log(`Failed solving captcha. retrying...`);
+            console.log(e);
+            console.log(`Attempt: ${attempt}`);
+          },
+        }
       );
-
-      const cookies = await page.cookies();
-      return cookies;
     } catch (error) {
       console.error("Error:", error);
       throw error;
     } finally {
-      await browser.close();
+      //   await browser.close();
     }
   }
 
