@@ -1,5 +1,5 @@
 {
-  "name": "@consizeai/gateway",
+  "name": "@consizeai/turnstile-solver",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -10,16 +10,14 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@consizeai/shared": "workspace:*",
     "dotenv": "^16.4.7",
     "express": "^5.1.0",
-    "express-http-proxy": "^2.1.1",
-    "nodemon": "^3.1.9"
+    "nodemon": "^3.1.9",
+    "puppeteer": "^24.6.0",
+    "typescript": "^5.8.3",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@types/express": "^5.0.1",
-    "@types/express-http-proxy": "^1.6.6",
-    "tsx": "^4.19.3",
-    "typescript": "^5.8.3"
+    "tsx": "^4.19.3"
   }
 }
