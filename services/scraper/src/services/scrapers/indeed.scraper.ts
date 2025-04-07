@@ -1,16 +1,21 @@
 import { Request, Response } from "express";
 import scraperDo, { ScraperDoService } from "../scraper-do.service";
 import { convertHtmlToMarkdown } from "../../utils/html-to-md.js";
-import { extractJobMetadataPrompt } from "../../constant/ai-prompts/indeed.prompt.js";
+import {
+  extractJobDetailsPrompt,
+  extractJobMetadataPrompt,
+} from "../../constant/ai-prompts/indeed.prompt.js";
 import aiRouter from "../../constant/ai";
 import retry from "async-retry";
 import { cleanLLMJson } from "@consizeai/shared/helpers";
 import sendResponse from "@consizeai/shared/utils/send-response";
 import { HttpException } from "@consizeai/shared/utils/exception";
+import redis from "../../config/redis.js";
 
 type JobListingResp = {
+  source: "indeed";
   total_jobs: number;
-  job_listings: {
+  job_listings: Array<{
     job_id: string;
     link: string;
     title: string;
@@ -19,13 +24,45 @@ type JobListingResp = {
     location: string;
     date_posted: string;
     short_description: string;
-  }[];
+  }>;
+};
+
+type JobDetailsResp = {
+  role: string;
+  company_info: {
+    name: string;
+    url: string | null;
+    logo: string | null;
+  };
+  location: string;
+  work_setting: string | null;
+  type: string | null;
+  pay: string;
+  full_details: {
+    about_company: string;
+    about_role: string;
+    responsibilities: string[];
+    applicants_requirements: string[];
+    bonus_skills_or_experience: string[] | null;
+    compensation_and_perks: string[] | null;
+    benefits: string[] | null;
+    tech_stacks: Array<{
+      name: string;
+      type: string;
+      optionality: "required" | "preferred" | "optional";
+    }> | null;
+  };
+  rating: number | null;
 };
 
 class IndeedScraperService {
   private scraperDo: ScraperDoService;
   constructor() {
     this.scraperDo = scraperDo;
+  }
+
+  private constructIndeedJobDetailsPage(id: string) {
+    return `https://www.indeed.com/viewjob?jk=${id}`;
   }
 
   async scrapeJobListing(url: string) {
@@ -50,7 +87,12 @@ class IndeedScraperService {
           requiredFields: ["total_jobs", "job_listings"],
         });
 
-        return cleanResp;
+        const formatted = {
+          source: "indeed",
+          ...cleanResp,
+        } as JobListingResp;
+
+        return formatted;
       },
       {
         retries: 3,
@@ -66,26 +108,71 @@ class IndeedScraperService {
     return result;
   }
 
-  async init(req: Request, res: Response) {
+  async scrapeJobDetails(id: string) {
+    const url = this.constructIndeedJobDetailsPage(id);
+    const response = await this.scraperDo.scrape(url);
+    const data = response?.data;
+
+    if (!data) {
+      throw new Error("Error scraping " + url);
+    }
+
+    const markdownConversion = convertHtmlToMarkdown(data);
+    const prompt = extractJobDetailsPrompt(markdownConversion);
+
+    const result = await retry(
+      async () => {
+        const aiResp = await aiRouter.generate({
+          prompt,
+        });
+
+        const cleanResp = cleanLLMJson({
+          response: aiResp,
+          requiredFields: [
+            "role",
+            "company_info",
+            "location",
+            "type",
+            "pay",
+            "full_details",
+            "rating",
+          ],
+        });
+
+        const formatted = {
+          source: "indeed",
+          ...cleanResp,
+        } as JobDetailsResp;
+
+        return formatted;
+      },
+      {
+        retries: 3,
+        onRetry: (e: any, attempt) => {
+          console.log(
+            `[GenAI]: Error extracting Job metadata ${url}: ${e.message}`
+          );
+          console.log(`Retrying attempt ${attempt}`);
+        },
+      }
+    );
+
+    return result;
+  }
+
+  async getJobListing(req: Request, res: Response) {
     const { url } = req.body;
-    const queries = req.query;
-    const scrapingTypes = ["listing", "details"] as const;
-    const s_type = queries["s_type"] as (typeof scrapingTypes)[number];
 
-    if (!scrapingTypes.includes(s_type)) {
-      throw new HttpException(
-        `Invalid scraping type. Expected {${scrapingTypes.join(", ")}}.`,
-        400
-      );
-    }
+    const resp = await this.scrapeJobDetails(url);
 
-    switch (s_type) {
-      case "listing":
-        const resp = await this.scrapeJobListing(url);
-        return sendResponse.success(res, "scrapped successfully", 200, resp);
-      default:
-        break;
-    }
+    return sendResponse.success(res, "scrapped successfully", 200, resp);
+  }
+
+  async getJobDetails(req: Request, res: Response) {
+    const params = req.params;
+    const jobId = params["id"];
+    const details = await this.scrapeJobDetails(jobId);
+    return sendResponse.success(res, "scrapped successfully", 200, details);
   }
 }
 

@@ -74,3 +74,26 @@
   }
 }
 ```
+
+### Job details structure
+
+```json
+{
+  "role": "string",
+  "company_info": {
+    "name": "string",
+    "url": "string | null"
+  },
+  "location": "string",
+  "type": "string", // full-time, part-time, contract
+  "pay": "string",
+  "full_details": {
+    "about_company": "string",
+    "about_role": "string",
+    "applicants_task": "string",
+    "applicants_requirements": "string",
+    "additional_info": ""
+  },
+  "rating": "number | null"
+}
+```

@@ -15,17 +15,34 @@ router.post(
   `/scrape`,
   utils.validateSchema(scraperSchema) as any,
   utils.useCatchErrors(async (req: Request, res: Response) => {
-    const validTypes = ["indeed"] as const;
-    const type = req.query["type"] as (typeof validTypes)[number];
+    const validSources = ["indeed"] as const;
+    const source = req.query["source"] as (typeof validSources)[number];
 
-    if (!validTypes.includes(type as (typeof validTypes)[number])) {
+    if (!validSources.includes(source)) {
       res.status(400).json({
-        message: "Invalid scraper type",
+        message: "Invalid scraper source",
       });
       return;
     }
 
-    if (type === "indeed") await indeed.init(req, res);
+    if (source === "indeed") await indeed.getJobListing(req, res);
+  })
+);
+
+router.get(
+  `/scrape/:id`,
+  utils.useCatchErrors(async (req: Request, res: Response) => {
+    const validSources = ["indeed"] as const;
+    const source = req.query["source"] as (typeof validSources)[number];
+
+    if (!validSources.includes(source)) {
+      res.status(400).json({
+        message: "Invalid scraper source",
+      });
+      return;
+    }
+
+    if (source === "indeed") await indeed.getJobDetails(req, res);
   })
 );
 
