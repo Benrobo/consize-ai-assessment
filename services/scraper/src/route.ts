@@ -1,31 +1,31 @@
 import express, { Request, Response } from "express";
-import cfTurnstileSolver from "./cf-solver.js";
 import utils from "@consizeai/shared/utils";
-import { captchaSchema } from "./zod-schema.js";
+import { indeed } from "./services/index.js";
+import { scraperSchema } from "./utils/zod-schema.js";
 
 const router = express.Router();
 
 router.get("/", (req, res) => {
   res.json({
-    message: "Hello from Turnstile Solver Server",
+    message: "Hello from Scraper Server",
   });
 });
 
 router.post(
-  `/solve`,
-  utils.validateSchema(captchaSchema) as any,
+  `/scrape`,
+  utils.validateSchema(scraperSchema) as any,
   utils.useCatchErrors(async (req: Request, res: Response) => {
-    const type = req.query["type"];
-    const validTypes = ["cf"] as const;
+    const validTypes = ["indeed"] as const;
+    const type = req.query["type"] as (typeof validTypes)[number];
 
     if (!validTypes.includes(type as (typeof validTypes)[number])) {
       res.status(400).json({
-        message: "Invalid type",
+        message: "Invalid scraper type",
       });
       return;
     }
 
-    if (type === "cf") await cfTurnstileSolver.init(req, res);
+    if (type === "indeed") await indeed.init(req, res);
   })
 );
 

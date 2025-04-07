@@ -50,42 +50,46 @@ export class CFTurnstileSolver {
               throw new Error("No website key found: " + frameUrl);
             }
 
+            const checkBox = await turnstileFrame.$("input[type=checkbox]");
+
+            console.log({ checkBox });
+
             // solve captcha
-            const task = await capSolver.createTask(url, websiteKey);
-            if (task?.data) {
-              const solvedTask = await retry(
-                async () => {
-                  const result = await capSolver.getTask(task?.data?.taskId!);
+            // const task = await capSolver.createTask(url, websiteKey);
+            // if (task?.data) {
+            //   const solvedTask = await retry(
+            //     async () => {
+            //       const result = await capSolver.getTask(task?.data?.taskId!);
 
-                  if (result?.data?.status === "idle") {
-                    throw new Error("Task still processing");
-                  }
+            //       if (result?.data?.status === "idle") {
+            //         throw new Error("Task still processing");
+            //       }
 
-                  if (result?.data?.status === "failed") {
-                    throw new Error(result?.data?.errorCode);
-                  }
+            //       if (result?.data?.status === "failed") {
+            //         throw new Error(result?.data?.errorCode);
+            //       }
 
-                  return result;
-                },
-                {
-                  retries: 5,
-                  factor: 1,
-                  minTimeout: 2000,
-                  maxTimeout: 5000,
-                  onRetry: (error, attempt) => {
-                    console.log(error);
-                    console.log(
-                      `Waiting for task completion... Attempt ${attempt}`
-                    );
-                  },
-                }
-              );
+            //       return result;
+            //     },
+            //     {
+            //       retries: 5,
+            //       factor: 1,
+            //       minTimeout: 2000,
+            //       maxTimeout: 5000,
+            //       onRetry: (error, attempt) => {
+            //         console.log(error);
+            //         console.log(
+            //           `Waiting for task completion... Attempt ${attempt}`
+            //         );
+            //       },
+            //     }
+            //   );
 
-              console.log({ solvedTask });
-            } else {
-              console.log("Error solving task...");
-              console.log(task);
-            }
+            //   console.log({ solvedTask });
+            // } else {
+            //   console.log("Error solving task...");
+            //   console.log(task);
+            // }
           } else {
             throw new Error("No turnstile frame found.");
           }

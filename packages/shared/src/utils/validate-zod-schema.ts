@@ -15,8 +15,6 @@ export function validateSchema(schema: ZodSchema) {
 
       const validatedData = schema.safeParse({ body, params });
 
-      console.log(validatedData);
-
       if (!validatedData.success) {
         const issues = validatedData.error?.issues;
         const msg =
@@ -32,7 +30,7 @@ export function validateSchema(schema: ZodSchema) {
       req["validatedData"] = validatedData.data;
       next();
     } catch (error) {
-      console.log({ error });
+      // console.log({ error });
       return sendResponse.error(res, "Invalid request data", 400, error);
     }
   };

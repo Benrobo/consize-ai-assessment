@@ -74,7 +74,7 @@ class CapSolver {
 
       return this.result as Response<GetTaskResult>;
     } catch (e: any) {
-      console.log(`Error creating task: `, e);
+      console.log(`Error getting task: `, e);
       this.result.error = e?.response?.message || e?.message;
       return this.result as Response<GetTaskResult>;
     }
@@ -83,3 +83,6 @@ class CapSolver {
 
 const capSolver = new CapSolver();
 export default capSolver;
+
+// Use oxylabs indeed scraper
+// create multiple accounts using temp-mail
