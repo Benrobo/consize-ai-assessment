@@ -9,7 +9,6 @@ import aiRouter from "../../constant/ai";
 import retry from "async-retry";
 import { cleanLLMJson } from "@consizeai/shared/helpers";
 import sendResponse from "@consizeai/shared/utils/send-response";
-import { HttpException } from "@consizeai/shared/utils/exception";
 import redis from "../../config/redis.js";
 
 type JobListingResp = {
@@ -57,8 +56,14 @@ type JobDetailsResp = {
 
 class IndeedScraperService {
   private scraperDo: ScraperDoService;
+  private CACHE_TTL = 60 * 60 * 24; // 24 hours
+
   constructor() {
     this.scraperDo = scraperDo;
+  }
+
+  private getCacheKey(type: "listing" | "details", identifier: string): string {
+    return `indeed:${type}:${identifier}`;
   }
 
   private constructIndeedJobDetailsPage(id: string) {
@@ -66,6 +71,13 @@ class IndeedScraperService {
   }
 
   async scrapeJobListing(url: string) {
+    const cacheKey = this.getCacheKey("listing", url);
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      console.log("Cache hit for job listing:", url);
+      return JSON.parse(cached) as JobListingResp;
+    }
+
     const response = await this.scraperDo.scrape(url);
     const data = response?.data;
 
@@ -92,6 +104,14 @@ class IndeedScraperService {
           ...cleanResp,
         } as JobListingResp;
 
+        // Cache the result
+        await redis.set(
+          cacheKey,
+          JSON.stringify(formatted),
+          "EX",
+          this.CACHE_TTL
+        );
+
         return formatted;
       },
       {
@@ -109,6 +129,13 @@ class IndeedScraperService {
   }
 
   async scrapeJobDetails(id: string) {
+    const cacheKey = this.getCacheKey("details", id);
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      console.log("Cache hit for job details:", id);
+      return JSON.parse(cached) as JobDetailsResp;
+    }
+
     const url = this.constructIndeedJobDetailsPage(id);
     const response = await this.scraperDo.scrape(url);
     const data = response?.data;
@@ -144,6 +171,14 @@ class IndeedScraperService {
           ...cleanResp,
         } as JobDetailsResp;
 
+        // Cache the result
+        await redis.set(
+          cacheKey,
+          JSON.stringify(formatted),
+          "EX",
+          this.CACHE_TTL
+        );
+
         return formatted;
       },
       {
@@ -162,9 +197,7 @@ class IndeedScraperService {
 
   async getJobListing(req: Request, res: Response) {
     const { url } = req.body;
-
     const resp = await this.scrapeJobDetails(url);
-
     return sendResponse.success(res, "scrapped successfully", 200, resp);
   }
 
