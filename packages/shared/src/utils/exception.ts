@@ -9,3 +9,17 @@ export class HttpException extends Error {
     this.data = data;
   }
 }
+
+export class WorkersException extends Error {
+  public errorCode: string;
+  public data: {
+    message?: string;
+    details: any;
+  };
+  constructor(errorCode: string, data?: any) {
+    super();
+    this.name = "WorkersException";
+    this.errorCode = errorCode;
+    this.data = data;
+  }
+}

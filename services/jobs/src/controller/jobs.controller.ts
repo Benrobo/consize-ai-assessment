@@ -1,9 +1,12 @@
 import { Request, Response } from "express";
 import shortUUID from "short-uuid";
-import { VALID_JOBS_SOURCE_COUNTRIES, VALID_SOURCES } from "../constant/job";
 import { HttpException } from "@consizeai/shared/utils/exception";
 import { prisma } from "@consizeai/db";
 import sendResponse from "@consizeai/shared/utils/send-response";
+import {
+  VALID_JOBS_SOURCE_COUNTRIES,
+  VALID_SOURCES,
+} from "@consizeai/shared/constant";
 
 type CreateProfilePayload = {
   query: string;
@@ -14,6 +17,8 @@ type CreateProfilePayload = {
 };
 
 export class JobController {
+  constructor() {}
+
   private validateSourceCountry(
     country: string,
     source: (typeof VALID_SOURCES)[number]

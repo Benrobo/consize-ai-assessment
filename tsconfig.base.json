@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
     "target": "ES6",
-    "module": "commonjs",
+    // "module": "commonjs",
+    "module": "NodeNext",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -10,7 +11,8 @@
     "paths": {
       "@consizeai/shared": ["packages/shared/src/index.ts"],
       "@consizeai/shared/*": ["packages/shared/src/*"],
-      "@consizeai/db": ["packages/database/src/index.ts"]
+      "@consizeai/db": ["packages/database/src/index.ts"],
+      "@consizeai/workers": ["packages/services/workers/src/index.ts"]
     }
   }
 }

@@ -1,5 +1,5 @@
 {
-  "watch": ["src", "../../shared"],
+  "watch": ["src", "../../shared", ".env"],
   "ext": "ts,json",
   "ignore": ["dist"],
   "exec": "tsx ./src/server.ts"

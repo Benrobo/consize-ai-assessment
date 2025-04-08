@@ -1,4 +1,5 @@
 import { logger, schedules, task, wait } from "@trigger.dev/sdk/v3";
+import { triggerScrapeJobListing } from "../triggers/job-triggers";
 
 export const runEvery6Hours = schedules.task({
   id: "every-six-hours",
@@ -8,5 +9,6 @@ export const runEvery6Hours = schedules.task({
     logger.log(`Running job [every 6th hours]`, { payload, ctx });
 
     // declare all sort of data
+    await triggerScrapeJobListing();
   },
 });

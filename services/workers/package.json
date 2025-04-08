@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "exports": {
+    "./jobs": "./src/jobs/index.ts",
+    ".": "./src/index.ts"
+  },
   "scripts": {
     "dev": "nodemon",
     "trigger:dev": "npx trigger.dev@latest dev",
@@ -14,9 +18,12 @@
   "dependencies": {
     "@consizeai/db": "*",
     "@consizeai/shared": "*",
+    "@consizeai/workers": "*",
     "@trigger.dev/sdk": "^3.3.17",
+    "axios": "^1.8.4",
     "express": "^5.1.0",
-    "nodemon": "^3.1.9"
+    "nodemon": "^3.1.9",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@trigger.dev/build": "^3.3.17",

@@ -4,5 +4,11 @@
     "outDir": "./dist",
     "rootDir": "../../"
   },
-  "include": ["src/**/*"]
+  "include": [
+    "src/**/*",
+    "src/index.ts",
+    "../workers/src/jobs/job-processing",
+    "../workers/src/triggers/job-triggers.ts",
+    "../workers/src/triggers/indeed-jobs-processing.ts"
+  ]
 }

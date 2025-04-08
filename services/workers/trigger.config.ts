@@ -1,4 +1,4 @@
-import { defineConfig } from "@trigger.dev/sdk/v3";
+import { defineConfig, configure } from "@trigger.dev/sdk/v3";
 
 export default defineConfig({
   project: "proj_zvugwlssbiucbnhiwxoo",
@@ -18,5 +18,5 @@ export default defineConfig({
       randomize: true,
     },
   },
-  dirs: ["./src/jobs/**/**"],
+  dirs: ["./src/jobs/**/**", "./src/jobs"],
 });
