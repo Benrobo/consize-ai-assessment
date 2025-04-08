@@ -92,7 +92,7 @@ export class JobController {
                 data: {
                   id: shortUUID.generate(),
                   source: source,
-                  page: idx,
+                  page: (idx += 1),
                   status: "pending",
                   profile_id: profileId,
                 },
@@ -126,6 +126,36 @@ export class JobController {
       profiles,
       count: profiles.length,
     });
+  }
+
+  async deleteProfile(req: Request, res: Response) {
+    const profileId = req.params["profileId"];
+
+    if (!profileId) {
+      throw new HttpException("Profile ID is required", 400);
+    }
+
+    const profile = await prisma.jobProfile.findUnique({
+      where: { id: profileId },
+    });
+
+    if (!profile) {
+      throw new HttpException("Profile not found", 404);
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // Delete all scraping progress records first
+      await tx.jobProfileScrapingProgress.deleteMany({
+        where: { profile_id: profileId },
+      });
+
+      // Then delete the profile
+      await tx.jobProfile.delete({
+        where: { id: profileId },
+      });
+    });
+
+    return sendResponse.success(res, "Job profile deleted", 200);
   }
 }
 

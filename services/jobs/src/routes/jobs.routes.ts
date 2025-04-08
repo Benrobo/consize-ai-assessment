@@ -27,4 +27,10 @@ router.get(
   utils.useCatchErrors(jobController.getProfiles.bind(jobController))
 );
 
+router.delete(
+  `/jobProfileList/:profileId`,
+  authMiddlewares.isAPIAuthorised,
+  utils.useCatchErrors(jobController.deleteProfile.bind(jobController))
+);
+
 export default router;
