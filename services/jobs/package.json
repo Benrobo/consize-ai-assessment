@@ -10,8 +10,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@consizeai/db": "*",
+    "@consizeai/shared": "*",
+    "dotenv": "^16.4.7",
     "express": "^5.1.0",
-    "nodemon": "^3.1.9"
+    "nodemon": "^3.1.9",
+    "short-uuid": "^5.2.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.1",

@@ -5,20 +5,14 @@ const app = express();
 
 const SERVICES = [
   {
-    name: "auth",
-    path: "/auth",
-    port: 1990,
-    baseUrl: "http://localhost",
-  },
-  {
     name: "jobs",
     path: "/jobs",
     port: 1991,
     baseUrl: "http://localhost",
   },
   {
-    name: "admin",
-    path: "/admin",
+    name: "workers",
+    path: "/workers",
     port: 1992,
     baseUrl: "http://localhost",
   },
@@ -34,12 +28,12 @@ const SERVICES = [
   //     port: 8191,
   //     baseUrl: "http://localhost",
   //   },
-  {
-    name: "capsolver",
-    path: "/capsolver",
-    port: 1994,
-    baseUrl: "http://localhost",
-  },
+  //   {
+  //     name: "capsolver",
+  //     path: "/capsolver",
+  //     port: 1994,
+  //     baseUrl: "http://localhost",
+  //   },
 ];
 
 SERVICES.forEach((service) => {

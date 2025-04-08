@@ -74,6 +74,7 @@ Return the following JSON structure with these field purposes:
 
 {
   "role": "string",  // The title or position being hired for, e.g., "Software Engineer"
+  "datePosted: "string", // The actual date posted (usaully within a <script> tag)
   "company_info": {
     "name": "string",  // Company name as shown in the listing
     "url": "string | null",  // The company website if listed, or null

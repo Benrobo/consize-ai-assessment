@@ -10,7 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@consizeai/shared": "workspace:*",
+    "@consizeai/shared": "*",
     "dotenv": "^16.4.7",
     "express": "^5.1.0",
     "express-http-proxy": "^2.1.1",

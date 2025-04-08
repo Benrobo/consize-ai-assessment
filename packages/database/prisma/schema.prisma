@@ -1,0 +1,94 @@
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+generator client {
+    provider = "prisma-client-js"
+    output   = "./generated/client"
+}
+
+model Job {
+    id                String    @id @default(cuid())
+    job_id            String    @unique
+    link              String
+    title             String
+    job_type          String?
+    company_name      String
+    location          String
+    budget            String?
+    date_posted       DateTime?
+    short_description String
+    status            String    @default("pending")
+    source            String // indeed ..etc
+
+    // job details
+    details             Json?
+    details_status      String @default("queued")
+    details_job_retries Int    @default(0)
+
+    created_at DateTime @default(now())
+
+    jobScrapingErrors JobProfileScrapingErrors[]
+
+    @@index([job_id])
+    @@index([status, details_status])
+    @@index([source, created_at])
+    @@map(name: "job")
+}
+
+model JobProfile {
+    id         String   @id @default(cuid())
+    query      String
+    pages      Int
+    source     String
+    location   String // city or street
+    country    String // united states, ..etc
+    status     String   @default("pending")
+    created_at DateTime @default(now())
+    updated_at DateTime @updatedAt
+
+    jobProfileScrapingProgress JobProfileScrapingProgress[]
+
+    @@index([query, id])
+    @@index([status, created_at])
+    @@index([query, location])
+    @@map(name: "job_profile")
+}
+
+// have an option or field that allows triggering of scraper forcefully
+// and on a queue basis
+// i.e once the cronjob invokes, it looks for 5 jobs that match this:
+// status=pending || error !== null
+// pick 5 only and create jobs for each of them.
+
+model JobProfileScrapingProgress {
+    id         String   @id @default(cuid())
+    profile_id String
+    source     String
+    page       Int      @default(1)
+    status     String   @default("pending")
+    error      String?
+    error_page Int? // Page where the error occurred
+    created_at DateTime @default(now())
+    updated_at DateTime @updatedAt
+
+    jobProfile JobProfile @relation(fields: [profile_id], references: [id])
+
+    @@index([id, profile_id])
+    @@index([profile_id, status])
+    @@index([status, created_at])
+    @@map(name: "job_profile_scraping_progress")
+}
+
+model JobProfileScrapingErrors {
+    id            String   @id @default(cuid())
+    job_id        String
+    job_type      String // 'listing' or 'details'
+    page          Int?
+    error_message String
+    occurred_at   DateTime @default(now())
+    job           Job      @relation(fields: [job_id], references: [id])
+
+    @@map(name: "job_profile_scraping_error")
+}

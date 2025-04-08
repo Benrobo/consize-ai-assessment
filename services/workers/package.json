@@ -1,19 +1,25 @@
 {
-  "name": "@consizeai/auth",
+  "name": "@consizeai/workers",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon"
+    "dev": "nodemon",
+    "trigger:dev": "npx trigger.dev@latest dev",
+    "build": "tsc --watch"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@consizeai/db": "*",
+    "@consizeai/shared": "*",
+    "@trigger.dev/sdk": "^3.3.17",
     "express": "^5.1.0",
     "nodemon": "^3.1.9"
   },
   "devDependencies": {
+    "@trigger.dev/build": "^3.3.17",
     "@types/express": "^5.0.1",
     "tsx": "^4.19.3",
     "typescript": "^5.8.3"

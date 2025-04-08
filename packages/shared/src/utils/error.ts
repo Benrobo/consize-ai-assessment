@@ -8,7 +8,7 @@ export default function useCatchErrors(fn: Function) {
     try {
       return await fn(req, res, next);
     } catch (err: any) {
-      console.log(`😥 Error [${err.code}]: ${err?.message}`);
+      console.log(`😥 Error: ${err?.message}`);
       console.log(err);
       if (
         err instanceof Prisma.PrismaClientKnownRequestError ||

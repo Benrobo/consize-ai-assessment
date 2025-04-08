@@ -28,6 +28,7 @@ type JobListingResp = {
 
 type JobDetailsResp = {
   role: string;
+  datePosted: string;
   company_info: {
     name: string;
     url: string | null;

@@ -4,7 +4,7 @@ const turndownService = new TurndownService();
 
 // invalid tags that are useless to LLM
 const invalidHtmlTags = [
-  "script",
+  //   "script",
   "style",
   "noscript",
   "iframe",

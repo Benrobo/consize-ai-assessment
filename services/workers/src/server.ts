@@ -1,8 +1,7 @@
 import express from "express";
-import router from "./routes/index.js";
+import router from "./route.js";
 import utils from "@consizeai/shared/utils";
 import bodyParser from "body-parser";
-// import "./test/test.js";
 
 const app = express();
 
@@ -11,16 +10,11 @@ app.use(express.urlencoded({ extended: true }));
 app.use(bodyParser.json({ limit: 100 }));
 app.use(bodyParser.urlencoded({ extended: false }));
 
-const routers = [router.jobRouter];
-
-routers.forEach((r) => {
-  app.use("/api", r);
-});
-
+app.use("/api", router);
 app.use((req, res, next) => utils.useCatchErrors(next)(req, res, next));
 
-const PORT = process.env.PORT || 1991;
+const PORT = process.env.PORT || 1992;
 
 app.listen(PORT, () => {
-  console.log(`Jobs Server running on port ${PORT}`);
+  console.log(`Worker Server running on port ${PORT}`);
 });

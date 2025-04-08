@@ -3,16 +3,10 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "exports": {
-    "./prisma": "./shared/prisma"
-  },
+  "exports": {},
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts --out-dir dist",
-    "dev": "tsup src/index.ts --format esm,cjs --dts --out-dir dist --watch",
-    "prisma:generate": "npx prisma generate"
-  },
-  "prisma": {
-    "schema": "./src/prisma/schema.prisma"
+    "dev": "tsup src/index.ts --format esm,cjs --dts --out-dir dist --watch"
   },
   "keywords": [],
   "author": "",
