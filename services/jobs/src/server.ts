@@ -2,7 +2,6 @@ import express from "express";
 import router from "./routes/index.js";
 import utils from "@consizeai/shared/utils";
 import bodyParser from "body-parser";
-// import "./test/test.js";
 
 const app = express();
 
@@ -11,9 +10,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(bodyParser.json({ limit: 100 }));
 app.use(bodyParser.urlencoded({ extended: false }));
 
-const routers = [router.jobRouter];
+const routers = Object.entries(router);
 
-routers.forEach((r) => {
+routers.forEach(([_, r]) => {
   app.use("/api", r);
 });
 

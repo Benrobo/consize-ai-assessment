@@ -56,7 +56,3 @@ const PORT = process.env.PORT || 1999;
 app.listen(PORT, () => {
   console.log(`Gateway server is running on port ${PORT}`);
 });
-
-// Implement headless browser scraping using puppeteer
-// rotate IP, user-agents
-// Grab the cookies once loaded.

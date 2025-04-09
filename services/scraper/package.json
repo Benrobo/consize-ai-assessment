@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon"
+    "dev": "nodemon",
+    "install:dep": "yarn install"
   },
   "keywords": [],
   "author": "",

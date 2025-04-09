@@ -1,36 +1,27 @@
 import express, { Request, Response } from "express";
 import utils from "@consizeai/shared/utils";
 import { authMiddlewares } from "@consizeai/shared/middlewares";
-import { createJobProfileSchema } from "../utils/schema-validation";
-import jobController from "../controller/jobs.controller.js";
+import {} from "../utils/schema-validation";
+import jobsController from "../controller/jobs.controller.js";
+
 import dotenv from "dotenv";
 dotenv.config();
 
 const router = express.Router();
 
-router.get("/", (req, res) => {
-  res.json({
-    message: "Hello from Jobs Service",
-  });
-});
-
-router.post(
-  `/jobProfileList/:source`,
-  utils.validateSchema(createJobProfileSchema) as any,
-  authMiddlewares.isAPIAuthorised,
-  utils.useCatchErrors(jobController.createProfile.bind(jobController))
+router.get(
+  `/`, // this maps to /jobs
+  utils.useCatchErrors(jobsController.getJobs.bind(jobsController))
 );
 
 router.get(
-  `/jobProfileList`,
-  authMiddlewares.isAPIAuthorised,
-  utils.useCatchErrors(jobController.getProfiles.bind(jobController))
+  `/details/:id`,
+  utils.useCatchErrors(jobsController.getJobDetails.bind(jobsController))
 );
 
-router.delete(
-  `/jobProfileList/:profileId`,
-  authMiddlewares.isAPIAuthorised,
-  utils.useCatchErrors(jobController.deleteProfile.bind(jobController))
+router.get(
+  `/latest`,
+  utils.useCatchErrors(jobsController.getLatestJobs.bind(jobsController))
 );
 
 export default router;

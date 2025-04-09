@@ -1,10 +1,20 @@
 {
-  "pipeline": {
-    "prisma:generate": {
-      "outputs": ["node_modules/.prisma/**", "node_modules/@prisma/client"]
+  "tasks": {
+    "install:dep": {
+      "cache": false
+    },
+    "db:generate": {
+      "cache": false
+    },
+    "db:migrate": {
+      "cache": false,
+      "persistent": true
+    },
+    "db:deploy": {
+      "cache": false
     },
     "build": {
-      "dependsOn": ["^prisma:generate"]
+      "dependsOn": ["^db:generate"]
     },
     "dev": {
       "cache": false,

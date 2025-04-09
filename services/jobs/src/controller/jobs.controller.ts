@@ -8,159 +8,95 @@ import {
   VALID_SOURCES,
 } from "@consizeai/shared/constant";
 
-type CreateProfilePayload = {
-  query: string;
-  country: string;
-  location: string;
-  invokeJob?: boolean;
-  pages: number;
+type PaginationQuery = {
+  page: string;
+  limit: string;
 };
 
 export class JobController {
   constructor() {}
 
-  private validateSourceCountry(
-    country: string,
-    source: (typeof VALID_SOURCES)[number]
-  ) {
-    const countryValid = VALID_JOBS_SOURCE_COUNTRIES[source].find(
-      (c) => c.name.toLowerCase() === country.toLowerCase()
-    );
+  async getJobs(req: Request, res: Response) {
+    const paginations = req.query as PaginationQuery;
+    const page = Number(paginations.page ?? 1);
+    const limit = Number(paginations?.limit ?? 20);
 
-    if (!countryValid) {
-      throw new HttpException(
-        "Invalid source supported country provided",
-        400,
-        {
-          supportedCountries: VALID_JOBS_SOURCE_COUNTRIES[source]
-            .map((c) => c.name)
-            .join(", "),
-        }
-      );
-    }
-  }
-
-  async createProfile(req: Request, res: Response) {
-    const source = req.params["source"] as (typeof VALID_SOURCES)[number];
-    const payload = req.body as CreateProfilePayload;
-
-    if (!VALID_SOURCES.includes(source)) {
-      throw new HttpException(
-        `Invalid job profile source. expected {${VALID_SOURCES.join(", ")}}`,
-        400
-      );
-    }
-
-    if (!payload.country.length || !payload.query.length) {
-      throw new HttpException(
-        `Invalid payload. missing "country or location or query"`,
-        400
-      );
-    }
-
-    this.validateSourceCountry(payload.country, source);
-
-    // check duplicate profiles
-    const profileExist = await prisma.jobProfile.findFirst({
+    const totalJobs = await prisma.job.count({
       where: {
-        query: payload.query,
-        location: payload.location,
-        country: payload.country,
+        details_status: "completed",
+        status: "completed",
       },
     });
-
-    if (profileExist) {
-      throw new HttpException("Duplicate job profile detected", 400, {
-        profile: profileExist?.id,
-      });
-    }
-
-    await prisma.$transaction(async (tx) => {
-      const profileId = shortUUID.generate();
-      await tx.jobProfile.create({
-        data: {
-          id: profileId,
-          country: payload.country,
-          query: payload.query,
-          location: payload.location ?? "",
-          pages: payload.pages,
-          source: source,
-        },
-      });
-
-      await Promise.all(
-        Array(payload.pages)
-          .fill(0)
-          .map(
-            async (_, idx) =>
-              await tx.jobProfileScrapingProgress.create({
-                data: {
-                  id: shortUUID.generate(),
-                  source: source,
-                  page: (idx += 1),
-                  status: "pending",
-                  profile_id: profileId,
-                },
-              })
-          )
-      );
+    const jobs = await prisma.job.findMany({
+      where: {
+        details_status: "completed",
+        status: "completed",
+      },
+      take: limit,
+      skip: totalJobs / page,
     });
 
-    return sendResponse.success(res, "Job profile created", 201);
+    return sendResponse.success(res, "Jobs retrieved successfully", 201, {
+      jobs,
+      pagination: {
+        totalPage: totalJobs / limit,
+        totalJobs,
+        page,
+      },
+    });
   }
 
-  async getProfiles(req: Request, res: Response) {
-    const { source, country, query, location } = req.query;
+  async getLatestJobs(req: Request, res: Response) {
+    const paginations = req.query as PaginationQuery;
+    const page = Number(paginations.page ?? 1);
+    const limit = Number(paginations?.limit ?? 20);
 
-    const profiles = await prisma.jobProfile.findMany({
+    const totalJobs = await prisma.job.count({
       where: {
-        ...(source && { source: source as string }),
-        ...(country && { country: country as string }),
-        ...(query && { query: query as string }),
-        ...(location && { location: location as string }),
+        details_status: "completed",
+        status: "completed",
       },
-      include: {
-        jobProfileScrapingProgress: true,
+    });
+    const latestJobs = await prisma.job.findMany({
+      where: {
+        details_status: "completed",
+        status: "completed",
       },
+      take: limit,
+      skip: totalJobs / page,
       orderBy: {
         created_at: "desc",
       },
     });
 
-    return sendResponse.success(res, "Job profiles retrieved", 200, {
-      profiles,
-      count: profiles.length,
-    });
+    return sendResponse.success(
+      res,
+      "Latest jobs retrieved successfully",
+      201,
+      {
+        jobs: latestJobs,
+        pagination: {
+          totalPage: totalJobs / limit,
+          totalJobs,
+          page,
+        },
+      }
+    );
   }
 
-  async deleteProfile(req: Request, res: Response) {
-    const profileId = req.params["profileId"];
-
-    if (!profileId) {
-      throw new HttpException("Profile ID is required", 400);
-    }
-
-    const profile = await prisma.jobProfile.findUnique({
-      where: { id: profileId },
+  async getJobDetails(req: Request, res: Response) {
+    const jobId = req.params["id"];
+    const job = await prisma.job.findFirst({
+      where: {
+        id: jobId,
+      },
     });
 
-    if (!profile) {
-      throw new HttpException("Profile not found", 404);
+    if (!job) {
+      throw new HttpException("Job not found", 404);
     }
 
-    await prisma.$transaction(async (tx) => {
-      // Delete all scraping progress records first
-      await tx.jobProfileScrapingProgress.deleteMany({
-        where: { profile_id: profileId },
-      });
-
-      // Then delete the profile
-      await tx.jobProfile.delete({
-        where: { id: profileId },
-      });
-    });
-
-    return sendResponse.success(res, "Job profile deleted", 200);
+    return sendResponse.success(res, "Jobs retrieved successfully", 201, job);
   }
 }
 

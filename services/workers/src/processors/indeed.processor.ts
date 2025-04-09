@@ -39,16 +39,24 @@ export class IndeedJobProcessor {
       loc: location,
     });
 
-    const req = await axios.post(
-      `${env.API_GATEWAY_URL}/scraper/scrape?type=indeed&s_type=listing`,
-      {
-        url: searchUrl,
-      }
-    );
+    try {
+      const req = await axios.post(
+        `${env.API_GATEWAY_URL}/scraper/scrape?type=indeed&s_type=listing`,
+        {
+          url: searchUrl,
+        },
+        {
+          timeout: 600000,
+        }
+      );
 
-    const resp = extractAxiosResponseData(req.data, "success")?.data;
+      const resp = extractAxiosResponseData(req.data, "success")?.data;
 
-    console.log(resp);
+      console.log(resp);
+    } catch (e: any) {
+      const err = extractAxiosResponseData(e, "error")?.data;
+      console.log(err);
+    }
   }
 
   async scrapeJobDetails(props: ScrapingProps) {}

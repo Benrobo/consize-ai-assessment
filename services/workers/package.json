@@ -10,7 +10,8 @@
   "scripts": {
     "dev": "nodemon",
     "trigger:dev": "npx trigger.dev@latest dev",
-    "build": "tsc --watch"
+    "build": "tsc --watch",
+    "install:dep": "yarn install"
   },
   "keywords": [],
   "author": "",
