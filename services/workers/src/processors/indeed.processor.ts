@@ -10,7 +10,10 @@ import { env } from "../config/env";
 import { BaseResponseType } from "@consizeai/shared/types/index.types.js";
 import { extractAxiosResponseData } from "@consizeai/shared/utils";
 import { logger } from "@trigger.dev/sdk/v3";
-import { JobListingResp } from "@consizeai/shared/types/scraper.types.js";
+import {
+  JobDetailsResp,
+  JobListingResp,
+} from "@consizeai/shared/types/scraper.types.js";
 import shortUUID from "short-uuid";
 
 type ScrapingProps = {
@@ -23,7 +26,7 @@ type ScrapingProps = {
 };
 
 export class IndeedJobProcessor {
-  private constructSearchUrl(props: {
+  private constructListingSearchUrl(props: {
     q: string;
     cn: string;
     loc?: string;
@@ -70,7 +73,7 @@ export class IndeedJobProcessor {
       page: progress.page,
     };
     const { query, country, location, page } = payload;
-    const searchUrl = this.constructSearchUrl({
+    const searchUrl = this.constructListingSearchUrl({
       q: query,
       cn: country,
       loc: location,
@@ -148,5 +151,49 @@ export class IndeedJobProcessor {
     }
   }
 
-  async scrapeJobDetails(jobId: string) {}
+  async scrapeJobDetails(jobId: string) {
+    if (!jobId) {
+      throw new Error("Missing job ID");
+    }
+
+    const job = await prisma.job.findUnique({
+      where: {
+        id: jobId,
+      },
+    });
+    if (!job) {
+      throw new WorkersException("INVALID_JOB_ID", {
+        message: `invalid job id of "${jobId}"`,
+      });
+    }
+
+    logger.info(`Scraping job details for ${job.title} ${job.company_name}`);
+
+    try {
+      const source = "indeed";
+      const sourceType = "details";
+      const url = `https://www.indeed.com/viewjob?jk=${job.job_id}`;
+      const req = await axios.post(
+        `${env.API_GATEWAY_URL}/scraper/scrape?source=${source}&s_type=${sourceType}`,
+        {
+          url,
+        },
+        {
+          timeout: 600000,
+        }
+      );
+
+      const resp = extractAxiosResponseData<JobDetailsResp>(
+        req.data,
+        "success"
+      )?.data;
+
+      logger.log("scrapped-data", resp);
+    } catch (e: any) {
+      logger.info(`🚨 Something went wrong`);
+      console.log(e);
+      const err = extractAxiosResponseData<any>(e, "error");
+      throw new Error(JSON.stringify(err, null, 2));
+    }
+  }
 }

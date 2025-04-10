@@ -66,22 +66,22 @@ export async function triggerScrapeJobListing() {
 export async function triggerScrapeJobDetails() {
   const scrapedJobs = await prisma.job.findMany({
     where: {
-      status: {
+      details_status: {
         in: ["pending", "failed"],
-      },
-      job_id: {
-        not: null as any,
       },
     },
   });
 
   if (!scrapedJobs.length) {
-    throw new WorkersException("ERR_EMPTY_JOBS_SCRAPED", {
-      message: "No scraped jobs to scrape",
-    });
+    // throw new WorkersException("ERR_EMPTY_JOBS_SCRAPED", {
+    //   message: "No scraped jobs to scrape",
+    // });
+    console.info(`No Scraped Jobs to process job details.`);
+    return;
   }
 
-  const jobsProfilesToScrape = scrapedJobs.slice(
+  const emptyJobDetails = scrapedJobs.filter((job) => !job.details);
+  const jobsProfilesToScrape = emptyJobDetails.slice(
     0,
     MAX_SCRAPE_JOBS_PER_PROFILE
   );
@@ -107,9 +107,9 @@ export async function triggerScrapeJobDetails() {
       const job = jobsToScrape[i];
       await JobWorkers.scrapeJobs.trigger(
         {
-          jobProgressId: job.id,
-          type: "listing",
+          type: "details",
           source: job.source as any,
+          jobId: job.id,
         },
         {
           delay: i === 0 ? "1s" : `${i * 5}m`,
@@ -119,7 +119,7 @@ export async function triggerScrapeJobDetails() {
     }
 
     console.log(
-      `🔃 Scraping ${jobsToScrape.length} jobs for profile ${profile.id}`
+      `🔃 Scraping ${jobsToScrape.length} job details for profile ${profile.id}`
     );
   }
 }
