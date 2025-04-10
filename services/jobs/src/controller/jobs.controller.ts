@@ -23,23 +23,23 @@ export class JobController {
 
     const totalJobs = await prisma.job.count({
       where: {
-        details_status: "completed",
-        status: "completed",
+        // details_status: "completed",
+        // status: "completed",
       },
     });
     const jobs = await prisma.job.findMany({
       where: {
-        details_status: "completed",
-        status: "completed",
+        // details_status: "completed",
+        // status: "completed",
       },
       take: limit,
-      skip: totalJobs / page,
+      skip: (page - 1) * limit,
     });
 
     return sendResponse.success(res, "Jobs retrieved successfully", 201, {
       jobs,
       pagination: {
-        totalPage: totalJobs / limit,
+        totalPage: Math.ceil(totalJobs / limit),
         totalJobs,
         page,
       },

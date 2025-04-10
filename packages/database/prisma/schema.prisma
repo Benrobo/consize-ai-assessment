@@ -10,7 +10,7 @@ generator client {
 
 model Job {
     id                String  @id @default(cuid())
-    job_id            String  @unique
+    job_id            String
     link              String? @default("N/A")
     title             String? @default("N/A")
     job_type          String? @default("N/A")
