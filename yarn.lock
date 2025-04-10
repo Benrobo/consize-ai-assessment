@@ -122,19 +122,19 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@consizeai/workers@npm:*, @consizeai/workers@workspace:services/workers":
+"@consizeai/workers@workspace:services/workers":
   version: 0.0.0-use.local
   resolution: "@consizeai/workers@workspace:services/workers"
   dependencies:
     "@consizeai/db": "npm:*"
     "@consizeai/shared": "npm:*"
-    "@consizeai/workers": "npm:*"
     "@trigger.dev/build": "npm:^3.3.17"
     "@trigger.dev/sdk": "npm:^3.3.17"
     "@types/express": "npm:^5.0.1"
     axios: "npm:^1.8.4"
     express: "npm:^5.1.0"
     nodemon: "npm:^3.1.9"
+    short-uuid: "npm:^5.2.0"
     tsx: "npm:^4.19.3"
     typescript: "npm:^5.8.3"
     zod: "npm:^3.24.2"

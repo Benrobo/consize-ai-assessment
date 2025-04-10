@@ -9,59 +9,41 @@ import axios, { head } from "axios";
 import { env } from "../config/env";
 import { BaseResponseType } from "@consizeai/shared/types/index.types.js";
 import { extractAxiosResponseData } from "@consizeai/shared/utils";
+import { logger } from "@trigger.dev/sdk/v3";
+import { JobListingResp } from "@consizeai/shared/types/scraper.types.js";
+import shortUUID from "short-uuid";
 
 type ScrapingProps = {
   query: string;
   country: string;
   location?: string;
+  page: number;
+
+  progressId: string; // not required for scraping
 };
 
 export class IndeedJobProcessor {
-  private constructSearchUrl(props: { q: string; cn: string; loc?: string }) {
-    const { q, cn, loc } = props;
+  private constructSearchUrl(props: {
+    q: string;
+    cn: string;
+    loc?: string;
+    page: number;
+  }) {
+    const { q, cn, loc, page } = props;
     const searchUrl = VALID_JOBS_SOURCE_COUNTRIES["indeed"].find(
       (c) => c.name.toLowerCase() === cn.toLowerCase()
     );
-    const baseUrl = `https://${searchUrl?.pathname}`;
+    const baseUrl = `https://${searchUrl?.pathname}/jobs`;
     const queryParams = new URLSearchParams({
       q,
     });
     if (loc) queryParams.set("rbl", loc);
     if (loc) queryParams.set("rbl", loc);
-    return encodeURIComponent(`${baseUrl}?${queryParams.toString()}`);
+    if (page) queryParams.set("start", `${page * 10}`);
+    return `${baseUrl}?${queryParams.toString()}`;
   }
 
-  async scrapeJobListing(props: ScrapingProps) {
-    const { query, country, location } = props;
-    const searchUrl = this.constructSearchUrl({
-      q: query,
-      cn: country,
-      loc: location,
-    });
-
-    try {
-      const req = await axios.post(
-        `${env.API_GATEWAY_URL}/scraper/scrape?type=indeed&s_type=listing`,
-        {
-          url: searchUrl,
-        },
-        {
-          timeout: 600000,
-        }
-      );
-
-      const resp = extractAxiosResponseData(req.data, "success")?.data;
-
-      console.log(resp);
-    } catch (e: any) {
-      const err = extractAxiosResponseData(e, "error")?.data;
-      console.log(err);
-    }
-  }
-
-  async scrapeJobDetails(props: ScrapingProps) {}
-
-  async init(progressId: string, type: string) {
+  async scrapeJobListing(progressId: string, type: string) {
     if (!type || !progressId) {
       throw new Error("Missing type or progressId");
     }
@@ -84,12 +66,87 @@ export class IndeedJobProcessor {
       country: progress.jobProfile.country,
       query: progress.jobProfile.query,
       location: progress.jobProfile.location,
+      progressId: progress.id,
+      page: progress.page,
     };
+    const { query, country, location, page } = payload;
+    const searchUrl = this.constructSearchUrl({
+      q: query,
+      cn: country,
+      loc: location,
+      page,
+    });
 
-    if (type === "listing") {
-      await this.scrapeJobListing(payload);
-    } else {
-      await this.scrapeJobDetails(payload);
+    logger.log(`Scraping job listing: [page: ${page}], [url: ${searchUrl}]`);
+
+    try {
+      const source = "indeed";
+      const sourceType = "listing";
+      const req = await axios.post(
+        `${env.API_GATEWAY_URL}/scraper/scrape?source=${source}&s_type=${sourceType}`,
+        {
+          url: searchUrl,
+        },
+        {
+          timeout: 600000,
+        }
+      );
+
+      const resp = extractAxiosResponseData<JobListingResp>(
+        req.data,
+        "success"
+      )?.data;
+
+      logger.log("scrapped-data", resp);
+
+      await prisma.$transaction(async (tx) => {
+        // add listing  to db
+        if (resp?.job_listings) {
+          for (const j of resp?.job_listings) {
+            if (j.job_id) {
+              await tx.job.create({
+                data: {
+                  id: shortUUID.generate(),
+                  job_id: j.job_id,
+                  title: j.title,
+                  location: j.location,
+                  source: source,
+                  company_name: j.company_name,
+                  date_posted: j.date_posted,
+                  link: j.link,
+                  short_description: j.short_description,
+                  budget: j.budget,
+                  job_type: j.job_type,
+                  status: "completed",
+                },
+              });
+            } else {
+              console.log(
+                `Discovered scraped job data without job ID: '${j.company_name}', source=${source}`
+              );
+            }
+          }
+
+          // update job progress status
+          await tx.jobProfileScrapingProgress.update({
+            where: {
+              id: progressId,
+            },
+            data: {
+              status: "completed",
+            },
+          });
+        }
+      });
+
+      logger.info(`✅ Successfully scraped ${resp?.total_jobs} successfully`);
+    } catch (e: any) {
+      logger.info(`🚨 Something went wrong`);
+      console.log(e);
+      const err = extractAxiosResponseData<any>(e, "error");
+      throw new Error(JSON.stringify(err, null, 2));
     }
   }
+
+  async scrapeJobDetails(jobId: string) {}
 }

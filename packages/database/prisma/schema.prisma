@@ -9,17 +9,17 @@ generator client {
 }
 
 model Job {
-    id                String    @id @default(cuid())
-    job_id            String    @unique
-    link              String
-    title             String
-    job_type          String?
-    company_name      String
-    location          String
-    budget            String?
-    date_posted       DateTime?
-    short_description String
-    status            String    @default("pending")
+    id                String  @id @default(cuid())
+    job_id            String  @unique
+    link              String? @default("N/A")
+    title             String? @default("N/A")
+    job_type          String? @default("N/A")
+    company_name      String? @default("N/A")
+    location          String? @default("N/A")
+    budget            String? @default("N/A")
+    date_posted       String? @default("N/A")
+    short_description String? @default("N/A")
+    status            String  @default("pending")
     source            String // indeed ..etc
 
     // job details

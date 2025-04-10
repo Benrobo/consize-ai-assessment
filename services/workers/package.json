@@ -19,11 +19,11 @@
   "dependencies": {
     "@consizeai/db": "*",
     "@consizeai/shared": "*",
-    "@consizeai/workers": "*",
     "@trigger.dev/sdk": "^3.3.17",
     "axios": "^1.8.4",
     "express": "^5.1.0",
     "nodemon": "^3.1.9",
+    "short-uuid": "^5.2.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {

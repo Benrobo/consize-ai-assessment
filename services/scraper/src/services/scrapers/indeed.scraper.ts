@@ -10,50 +10,10 @@ import retry from "async-retry";
 import { cleanLLMJson } from "@consizeai/shared/helpers";
 import sendResponse from "@consizeai/shared/utils/send-response";
 import redis from "../../config/redis.js";
-
-type JobListingResp = {
-  source: "indeed";
-  total_jobs: number;
-  job_listings: Array<{
-    job_id: string;
-    link: string;
-    title: string;
-    job_type: string;
-    company_name: string;
-    location: string;
-    date_posted: string;
-    short_description: string;
-  }>;
-};
-
-type JobDetailsResp = {
-  role: string;
-  datePosted: string;
-  company_info: {
-    name: string;
-    url: string | null;
-    logo: string | null;
-  };
-  location: string;
-  work_setting: string | null;
-  type: string | null;
-  pay: string;
-  full_details: {
-    about_company: string;
-    about_role: string;
-    responsibilities: string[];
-    applicants_requirements: string[];
-    bonus_skills_or_experience: string[] | null;
-    compensation_and_perks: string[] | null;
-    benefits: string[] | null;
-    tech_stacks: Array<{
-      name: string;
-      type: string;
-      optionality: "required" | "preferred" | "optional";
-    }> | null;
-  };
-  rating: number | null;
-};
+import {
+  JobDetailsResp,
+  JobListingResp,
+} from "@consizeai/shared/types/scraper.types";
 
 class IndeedScraperService {
   private scraperDo: ScraperDoService;
@@ -198,7 +158,7 @@ class IndeedScraperService {
 
   async getJobListing(req: Request, res: Response) {
     const { url } = req.body;
-    const resp = await this.scrapeJobDetails(url);
+    const resp = await this.scrapeJobListing(url);
     return sendResponse.success(res, "scrapped successfully", 200, resp);
   }
 
