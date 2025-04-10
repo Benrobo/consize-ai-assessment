@@ -87,6 +87,7 @@ model JobProfileScrapingErrors {
     job_type      String // 'listing' or 'details'
     page          Int?
     error_message String
+    error_details String?  @default("N/A") // JSON data
     occurred_at   DateTime @default(now())
     job           Job      @relation(fields: [job_id], references: [id])
 

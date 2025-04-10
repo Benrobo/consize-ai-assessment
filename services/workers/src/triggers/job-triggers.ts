@@ -3,7 +3,7 @@ import { JobWorkers } from "@consizeai/workers";
 import { WorkersException } from "@consizeai/shared/utils/exception";
 
 const MAX_SCRAPE_JOBS = 5;
-const MAX_SCRAPE_JOBS_PER_PROFILE = 2;
+const MAX_SCRAPE_JOBS_PER_PROFILE = 5;
 
 export async function triggerScrapeJobListing() {
   const jobProfiles = await prisma.jobProfile.findMany({
@@ -67,7 +67,7 @@ export async function triggerScrapeJobDetails() {
   const scrapedJobs = await prisma.job.findMany({
     where: {
       details_status: {
-        in: ["pending", "failed"],
+        in: ["pending", "failed", "queued"],
       },
     },
   });
@@ -80,46 +80,26 @@ export async function triggerScrapeJobDetails() {
     return;
   }
 
-  const emptyJobDetails = scrapedJobs.filter((job) => !job.details);
+  const emptyJobDetails = scrapedJobs.filter(
+    (job) => !job.details || job.details === null
+  );
   const jobsProfilesToScrape = emptyJobDetails.slice(
     0,
     MAX_SCRAPE_JOBS_PER_PROFILE
   );
 
-  for (const profile of jobsProfilesToScrape) {
-    const jobsToScrape = await prisma.jobProfileScrapingProgress.findMany({
-      where: {
-        profile_id: profile.id,
-        status: {
-          in: ["pending", "failed"],
-        },
+  for (const [i, job] of jobsProfilesToScrape.entries()) {
+    await JobWorkers.scrapeJobs.trigger(
+      {
+        type: "details",
+        source: job.source as any,
+        jobId: job.id,
       },
-      take: MAX_SCRAPE_JOBS,
-    });
-
-    if (!jobsToScrape.length) {
-      throw new WorkersException("ERR_EMPTY_JOBS", {
-        message: "jobsToScrape is empty",
-      });
-    }
-
-    for (let i = 0; i < jobsToScrape.length; i++) {
-      const job = jobsToScrape[i];
-      await JobWorkers.scrapeJobs.trigger(
-        {
-          type: "details",
-          source: job.source as any,
-          jobId: job.id,
-        },
-        {
-          delay: i === 0 ? "1s" : `${i * 5}m`,
-          ttl: "2h",
-        }
-      );
-    }
-
-    console.log(
-      `🔃 Scraping ${jobsToScrape.length} job details for profile ${profile.id}`
+      {
+        delay: i === 0 ? "1s" : `${i * 5}m`,
+        ttl: "2h",
+      }
     );
   }
+  console.log(`🔃 Scraping ${jobsProfilesToScrape.length} job details`);
 }

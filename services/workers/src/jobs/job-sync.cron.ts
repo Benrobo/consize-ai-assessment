@@ -4,6 +4,7 @@ import {
   triggerScrapeJobListing,
 } from "../triggers/job-triggers";
 import { WorkersException } from "@consizeai/shared/utils/exception";
+import { prisma } from "@consizeai/db";
 
 export const runEvery6Hours = schedules.task({
   id: "every-six-hours",
@@ -21,7 +22,7 @@ export const runEvery5Minutes = schedules.task({
   id: "every-5minutes",
   maxDuration: 300, // Stop executing after 300 secs (5 mins) of compute
   cron: "*/5 * * * *", // every 5min
-  onFailure: (payload, error, params) => {
+  onFailure: async (payload, error, params) => {
     console.log(`🚨 An Error occured. ${JSON.stringify(payload, null, 2)}`);
     if (error instanceof WorkersException)
       logger.error(error?.message, error?.data);

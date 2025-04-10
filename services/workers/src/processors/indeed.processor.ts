@@ -171,16 +171,10 @@ export class IndeedJobProcessor {
 
     try {
       const source = "indeed";
-      const sourceType = "details";
       const url = `https://www.indeed.com/viewjob?jk=${job.job_id}`;
-      const req = await axios.post(
-        `${env.API_GATEWAY_URL}/scraper/scrape?source=${source}&s_type=${sourceType}`,
-        {
-          url,
-        },
-        {
-          timeout: 600000,
-        }
+      const req = await axios.get(
+        `${env.API_GATEWAY_URL}/scraper/scrape/${job.job_id}?source=${source}`,
+        { url }
       );
 
       const resp = extractAxiosResponseData<JobDetailsResp>(
@@ -189,10 +183,33 @@ export class IndeedJobProcessor {
       )?.data;
 
       logger.log("scrapped-data", resp);
+
+      await prisma.$transaction(async (tx) => {
+        await tx.job.update({
+          where: {
+            id: job.id,
+          },
+          data: {
+            details: resp,
+            details_status: "completed",
+          },
+        });
+        logger.info(`✅ Successfully scraped ${job.title} successfully`);
+      });
     } catch (e: any) {
       logger.info(`🚨 Something went wrong`);
       console.log(e);
       const err = extractAxiosResponseData<any>(e, "error");
+
+      // update db with error
+      await prisma.jobProfileScrapingErrors.create({
+        data: {
+          error_message: e?.message,
+          job_type: "details",
+          job_id: job.job_id,
+        },
+      });
+
       throw new Error(JSON.stringify(err, null, 2));
     }
   }
