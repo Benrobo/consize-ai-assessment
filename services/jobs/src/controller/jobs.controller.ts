@@ -56,6 +56,10 @@ export class JobController {
         details_status: "completed",
         status: "completed",
       },
+      take: limit,
+      orderBy: {
+        created_at: "asc",
+      },
     });
     const latestJobs = await prisma.job.findMany({
       where: {
@@ -63,9 +67,9 @@ export class JobController {
         status: "completed",
       },
       take: limit,
-      skip: totalJobs / page,
+      skip: (page - 1) * limit,
       orderBy: {
-        created_at: "desc",
+        created_at: "asc",
       },
     });
 
@@ -76,7 +80,7 @@ export class JobController {
       {
         jobs: latestJobs,
         pagination: {
-          totalPage: totalJobs / limit,
+          totalPage: Math.ceil(totalJobs / limit),
           totalJobs,
           page,
         },

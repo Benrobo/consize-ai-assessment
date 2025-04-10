@@ -1,13 +1,8 @@
 import { prisma } from "@consizeai/db";
 import { WorkersException } from "@consizeai/shared/utils/exception";
-import { Request, Response } from "express";
-import {
-  VALID_JOBS_SOURCE_COUNTRIES,
-  VALID_SOURCES,
-} from "@consizeai/shared/constant";
-import axios, { head } from "axios";
+import { VALID_JOBS_SOURCE_COUNTRIES } from "@consizeai/shared/constant";
+import axios from "axios";
 import { env } from "../config/env";
-import { BaseResponseType } from "@consizeai/shared/types/index.types.js";
 import { extractAxiosResponseData } from "@consizeai/shared/utils";
 import { logger } from "@trigger.dev/sdk/v3";
 import {
@@ -15,15 +10,6 @@ import {
   JobListingResp,
 } from "@consizeai/shared/types/scraper.types.js";
 import shortUUID from "short-uuid";
-
-type ScrapingProps = {
-  query: string;
-  country: string;
-  location?: string;
-  page: number;
-
-  progressId: string; // not required for scraping
-};
 
 export class IndeedJobProcessor {
   private constructListingSearchUrl(props: {
